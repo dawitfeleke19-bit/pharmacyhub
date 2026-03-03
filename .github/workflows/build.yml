@@ -1,0 +1,52 @@
+name: Build Windows App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Vite app
+        run: npm run build
+
+      - name: Install Electron & Builder
+        run: npm install --save-dev electron electron-builder
+
+      - name: Create Electron main file
+        run: |
+          mkdir electron
+          echo const { app, BrowserWindow } = require('electron'); > electron/main.js
+          echo const path = require('path'); >> electron/main.js
+          echo function createWindow() { >> electron/main.js
+          echo const win = new BrowserWindow({ width: 1200, height: 800 }); >> electron/main.js
+          echo win.loadFile(path.join(__dirname, '../dist/index.html')); >> electron/main.js
+          echo } >> electron/main.js
+          echo app.whenReady().then(createWindow); >> electron/main.js
+
+      - name: Update package.json
+        run: |
+          powershell -Command "(Get-Content package.json) -replace '\"scripts\": {', '\"main\": \"electron/main.js\", \"scripts\": {' | Set-Content package.json"
+
+      - name: Build Windows Installer
+        run: npx electron-builder --win --x64
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-Installer
+          path: dist

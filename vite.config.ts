@@ -4,5 +4,6 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: './', // <--- This is the "Magic Line" for Electron/Desktop apps
   plugins: [react(), tailwindcss()],
 })
